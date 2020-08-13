@@ -1,5 +1,3 @@
-#java 
-
 public class FixedCapacityStack<Item> {
     private Item[] a; // stack entries
     private int N; // size
