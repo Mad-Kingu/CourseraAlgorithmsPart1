@@ -1,28 +1,40 @@
+import edu.princeton.cs.algs4.StdOut;
+
 import java.util.Iterator;
 import java.util.Random;
 
 public class Deque<Item> implements Iterable<Item> {
-    private Item[] array;
-    private int frontPointer;
-    private int backPointer;
-    private int size;
+    Node tailNode;
+    Node headNode;
+    private int size = 0;
+
+    private class Node {
+        private Item data;
+        private Node next;
+        private Node previous;
+
+        public Node(Item data, Node next, Node previous) {
+            this.data = data;
+            this.next = next;
+            this.previous = previous;
+        }
+    }
 
     // construct an empty deque
     public Deque() {
-        this.size = 1;
-        array = (Item[]) new Object[size];
-        frontPointer = 0;
-        backPointer = size - 1;
+        tailNode = new Node(null, null, null); // tailnode is the tail pointer
+        headNode = new Node(null, tailNode, null); // headnode is the head node with tail next
+        tailNode.previous = headNode;
     }
 
     // is the deque empty?
     public boolean isEmpty() {
-        return frontPointer == 0 && backPointer == size - 1;
+        return size == 0;
     }
 
     // return the number of items on the deque
     public int size() {
-        return size - (backPointer - frontPointer + 1);
+        return size;
     }
 
     // add the item to the front
@@ -30,26 +42,15 @@ public class Deque<Item> implements Iterable<Item> {
         if (item == null) {
             throw new IllegalArgumentException("You can not push null argument into deque!");
         }
-        if (size() == size) {
-            int sizeDifferences = size - backPointer;
-            int newSize = size * 2;
-            Item[] tempArray = (Item[]) new Object[newSize];
-            for (int i = 0; i < frontPointer; i++) {
-                tempArray[i] = array[i];
-            }
-            for (int i = newSize - 1; i > size - backPointer; i--) {
-                tempArray[i] = array[i];
-            }
-            size = newSize;
-            backPointer = newSize - sizeDifferences;
-            array = tempArray;
-        }
 
-        if (frontPointer > backPointer) {
-            throw new IndexOutOfBoundsException("Deque is full!");
+        if (headNode.data == null) {
+            headNode.data = item;
         } else {
-            array[frontPointer++] = item;
+            Node newNode = new Node(item, headNode, null);
+            headNode.previous = newNode;
+            headNode = newNode;
         }
+        size++;
     }
 
     // add the item to the back
@@ -58,43 +59,90 @@ public class Deque<Item> implements Iterable<Item> {
             throw new IllegalArgumentException("You can not push null argument into deque!");
         }
 
-        if (frontPointer > backPointer) {
-            throw new IndexOutOfBoundsException("Deque is full!");
+        if (tailNode.data == null) {
+            tailNode.data = item;
         } else {
-            array[backPointer--] = item;
+            Node newNode = new Node(item, null, tailNode);
+            tailNode.next = newNode;
+            tailNode = newNode;
         }
+        size++;
     }
 
     // remove and return the item from the front
     public Item removeFirst() {
-        if (frontPointer == 0) {
+        if (isEmpty()) {
             throw new java.util.NoSuchElementException("Front of the Deque is empty!");
         }
-        return array[--frontPointer];
+
+        Item tempData = null;
+        if (size != 1) {
+            if (headNode.data != null) {
+                tempData = headNode.data;
+                Node tempNode = headNode;
+                headNode = headNode.next;
+                headNode.previous = null;
+                tempNode.next = null;
+                tempNode.data = null;
+            }
+        } else {
+            if (headNode.data != null) {
+                tempData = headNode.data;
+                headNode.data = null;
+            } else {
+                tempData = tailNode.data;
+                tailNode.data = null;
+            }
+        }
+        size--;
+        return tempData;
     }
 
     // remove and return the item from the back
     public Item removeLast() {
-        if (backPointer == size - 1) {
+        if (isEmpty()) {
             throw new java.util.NoSuchElementException("Back of the Deque is empty!");
         }
-        return array[++backPointer];
+
+        Item tempData = null;
+        if (size != 1) {
+            if (tailNode.data != null) {
+                tempData = tailNode.data;
+                Node tempNode = tailNode;
+                tailNode = tailNode.previous;
+                tailNode.next = null;
+                tempNode.previous = null;
+                tempNode.data = null;
+            }
+        } else {
+            if (tailNode.data != null) {
+                tempData = tailNode.data;
+                tailNode.data = null;
+            } else {
+                tempData = headNode.data;
+                headNode.data = null;
+            }
+        }
+        size--;
+        return tempData;
     }
 
     // return an iterator over items in order from front to back
     public Iterator<Item> iterator() {
         return new Iterator<Item>() {
-            private int pointer = 0;
+            private Node tempNode = headNode;
 
             public boolean hasNext() {
-                return pointer != size;
+                return tempNode != null;
             }
 
             public Item next() {
                 if (!hasNext()) {
                     throw new java.util.NoSuchElementException("No more item left in the Deque!");
                 } else {
-                    return array[pointer++];
+                    Item tempData = tempNode.data;
+                    tempNode = tempNode.next;
+                    return tempData;
                 }
             }
 
@@ -116,14 +164,16 @@ public class Deque<Item> implements Iterable<Item> {
         }
 
         for (int i = 0; i < 10; i++) {
-            System.out.println(deque.removeFirst());
-        }
-
-        for (int i = 0; i < 10; i++) {
             int n = rand.nextInt(Integer.MAX_VALUE);
             deque.addLast(n);
         }
 
+        System.out.println("Remove from first 10!");
+        for (int i = 0; i < 10; i++) {
+            System.out.println(deque.removeFirst());
+        }
+
+        System.out.println("Remove from last 10!");
         for (int i = 0; i < 10; i++) {
             System.out.println(deque.removeLast());
         }
@@ -136,6 +186,11 @@ public class Deque<Item> implements Iterable<Item> {
                 deque.addLast(n);
         }
 
+        System.out.println("Iteration started!");
+        for (Integer s : deque)
+            StdOut.println(s);
+
+        System.out.println("Removing the queue started!");
         for (int i = 0; i < 10; i++) {
             if (i % 2 == 0)
                 System.out.println(deque.removeFirst());
